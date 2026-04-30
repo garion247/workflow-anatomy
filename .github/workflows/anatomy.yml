@@ -6,25 +6,29 @@ on:
   pull_request:
     branches: [ master ]
 
-env:
-  GREETING: "from workflow"
-  AUDIENCE: "world"
-
 jobs:
   anatomy:
     runs-on: ubuntu-latest
-    env:
-      GREETING: "from job"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Workflow env wins for AUDIENCE
-        run: echo "AUDIENCE=$AUDIENCE"
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+          npm test
 
-      - name: Job env overrides workflow for GREETING
-        run: echo "GREETING=$GREETING"
+      - name: Push-only step
+        if: github.event_name == 'push'
+        run: echo "This step only runs on push events"
 
-      - name: Step env wins
-        env:
-          GREETING: "from step"
-        run: echo "GREETING=$GREETING"
+      - name: PR-only step
+        if: github.event_name == 'pull_request'
+        run: echo "This step only runs on pull requests"
+
+      - name: Failure reporter
+        if: failure()
+        run: echo "A previous step failed - would alert here"
+
+      - name: Always-runs cleanup
+        if: always()
+        run: echo "This always runs, even after failures"
