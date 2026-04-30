@@ -4,28 +4,31 @@ on:
   push:
     branches: [ master ]
 
+permissions:
+  contents: read
+
 jobs:
   anatomy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate version
-        id: version
+      - name: List issues using GITHUB_TOKEN
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="1.0.${{ github.run_number }}"
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
-          echo "Generated: $VERSION+$SHORT_SHA"
+          gh issue list --repo ${{ github.repository }} --limit 5 --json number,title \
+            | jq -r '.[] | "#\(.number) \(.title)"' \
+            || echo "No issues yet"
 
-      - name: Use version in a tag
+      - name: Create a heartbeat issue
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Building tag: v${{ steps.version.outputs.version }}-${{ steps.version.outputs.short_sha }}"
-
-      - name: Use version in a filename
-        run: |
-          FILENAME="release-${{ steps.version.outputs.version }}.txt"
-          echo "Writing $FILENAME"
-          echo "Build ${{ steps.version.outputs.version }}+${{ steps.version.outputs.short_sha }}" > "$FILENAME"
-          cat "$FILENAME"
+          gh issue create \
+            --repo ${{ github.repository }} \
+            --title "Run #${{ github.run_number }} heartbeat" \
+            --body "Created by workflow run ${{ github.run_id }}"
