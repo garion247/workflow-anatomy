@@ -1,0 +1,32 @@
+name: Workflow Anatomy
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  anatomy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (action step)
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (action step)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Show Node version (run step)
+        run: node --version
+
+      - name: List source files (run step in src/)
+        working-directory: src
+        run: ls -la
+
+      - name: Run tests (multi-line run step)
+        run: |
+          echo "Starting test suite..."
+          npm test
+          echo "Test suite complete."
