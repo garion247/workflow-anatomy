@@ -6,27 +6,25 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  GREETING: "from workflow"
+  AUDIENCE: "world"
+
 jobs:
   anatomy:
     runs-on: ubuntu-latest
+    env:
+      GREETING: "from job"
     steps:
-      - name: Checkout (action step)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js (action step)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Workflow env wins for AUDIENCE
+        run: echo "AUDIENCE=$AUDIENCE"
 
-      - name: Show Node version (run step)
-        run: node --version
+      - name: Job env overrides workflow for GREETING
+        run: echo "GREETING=$GREETING"
 
-      - name: List source files (run step in src/)
-        working-directory: src
-        run: ls -la
-
-      - name: Run tests (multi-line run step)
-        run: |
-          echo "Starting test suite..."
-          npm test
-          echo "Test suite complete."
+      - name: Step env wins
+        env:
+          GREETING: "from step"
+        run: echo "GREETING=$GREETING"
