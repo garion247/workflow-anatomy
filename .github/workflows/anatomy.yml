@@ -3,8 +3,6 @@ name: Workflow Anatomy
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
   anatomy:
@@ -12,23 +10,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run tests
+      - name: Generate version
+        id: version
         run: |
-          echo "Running tests..."
-          npm test
+          VERSION="1.0.${{ github.run_number }}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "Generated: $VERSION+$SHORT_SHA"
 
-      - name: Push-only step
-        if: github.event_name == 'push'
-        run: echo "This step only runs on push events"
+      - name: Use version in a tag
+        run: |
+          echo "Building tag: v${{ steps.version.outputs.version }}-${{ steps.version.outputs.short_sha }}"
 
-      - name: PR-only step
-        if: github.event_name == 'pull_request'
-        run: echo "This step only runs on pull requests"
-
-      - name: Failure reporter
-        if: failure()
-        run: echo "A previous step failed - would alert here"
-
-      - name: Always-runs cleanup
-        if: always()
-        run: echo "This always runs, even after failures"
+      - name: Use version in a filename
+        run: |
+          FILENAME="release-${{ steps.version.outputs.version }}.txt"
+          echo "Writing $FILENAME"
+          echo "Build ${{ steps.version.outputs.version }}+${{ steps.version.outputs.short_sha }}" > "$FILENAME"
+          cat "$FILENAME"
